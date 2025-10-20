@@ -90,6 +90,8 @@ CPortableThickDlg::CPortableThickDlg(CWnd* pParent /*=nullptr*/)
 void CPortableThickDlg::DoDataExchange(CDataExchange* pDX)
 {
 	CDialogEx::DoDataExchange(pDX);
+
+
 	// label
 	DDX_Control(pDX, IDC_TITLE_NAME, _labelTitleName);
 	DDX_Control(pDX, IDC_MACHINE_STATUS, _labelMachineStatus);
@@ -117,7 +119,12 @@ void CPortableThickDlg::DoDataExchange(CDataExchange* pDX)
 	DDX_Control(pDX, IDC_LIST_THICK2, _gridListThick);
 
 	// chart
-	DDX_Control(pDX, IDC_CHART, _vChart);
+	//DDX_Control(pDX, IDC_CHART, _vChart);
+
+	// CustomDraw
+	DDX_Control(pDX, IDC_CHART, _customDraw);
+
+	//DDX_Control(pDX, IDC_CHART, _vImage);
 
 }
 
@@ -163,7 +170,8 @@ BOOL CPortableThickDlg::OnInitDialog()
 	// TODO: 여기에 추가 초기화 작업을 추가합니다.
 	InitLayout();
 	InitGrid();
-	InitChart();
+	//InitChart();
+	InitCustomDraw();
 
 	return TRUE;  // 포커스를 컨트롤에 설정하지 않으면 TRUE를 반환합니다.
 }
@@ -289,6 +297,34 @@ void CPortableThickDlg::InitGrid()
 		_gridListThick.SetItemState(0, c, _gridListThick.GetItemState(0, c) | GVIS_READONLY);
 		_gridListThick.SetItemBkColour(0, c, RGB(230, 230, 230));
 	}
+}
+
+void CPortableThickDlg::InitCustomDraw()
+{
+	// CustomDraw 초기화 - 100mm x 100mm 영역 설정
+	_customDraw.InitializeDimensions(100.0, 100.0);
+	
+	// 배경색 설정 (연한 회색)
+	_customDraw.SetBackgroundColor(RGB(10, 10, 10));
+
+	// 가이드선 표시 유무
+	_customDraw.SetShowGuides(false);
+	
+	// 예제 오브젝트들 추가
+	// 사각형 추가 (10mm, 10mm 위치에 20mm x 15mm 크기)
+	//_customDraw.AddRectangle(10.0, 10.0, 20.0, 15.0, RGB(255, 0, 0), 2, true);
+	
+	// 원 추가 (50mm, 50mm 중심에 반지름 10mm)
+	_customDraw.AddCircle(50.0, 50.0, 25.0, RGB(180, 180, 180), 2, true);
+	
+	// 선 추가 (0mm, 0mm에서 100mm, 100mm까지)
+	//_customDraw.AddLine(0.0, 0.0, 100.0, 100.0, RGB(0, 0, 255), 1);
+	
+	// 측정 지점들 추가 (그림에 맞게 배치)
+	_customDraw.AddMeasurementPoint(1, 35.0, 50.0, 45.0, 50.0, "NG");  // 왼쪽 중간
+	_customDraw.AddMeasurementPoint(2, 50.0, 25.0, 45.0, 48.0, "OK"); // 아래쪽 중간
+	_customDraw.AddMeasurementPoint(3, 50.0, 75.0, 45.0);              // 위쪽 중간 (측정값 없음)
+	_customDraw.AddMeasurementPoint(4, 65.0, 50.0, 45.0);              // 오른쪽 중간 (측정값 없음)
 }
 
 

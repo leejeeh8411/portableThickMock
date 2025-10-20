@@ -8,6 +8,8 @@
 #include "vIconButton.h"
 #include "vGridCtrl.h"
 #include "vChart.h"
+#include "CustomDraw.h"
+#include "vImage.h"
 
 const COLORREF RGB_WEAK_DEEP_GRAY = RGB(25, 30, 34);
 const COLORREF RGB_DARK_GRAY = RGB(22, 27, 30);
@@ -62,11 +64,14 @@ protected:
 
 	vGridCtrl  _gridListThick;
 	vChart _vChart;
+	CustomDraw _customDraw;
+	//vImage _vImage{ 100, 100, eImageDepth::Gray };
 
 	void InitLayout();
 	void InitLabel(vLabel& label, const std::wstring& text, eLabelAlignH hAlign, eLabelAlignV vAlign, int fontSize, COLORREF fontColor, COLORREF bgColor, const std::wstring& iconPath, int iconMargin);
 	void InitGrid();
 	void InitChart();
+	void InitCustomDraw();
 	void InitIconButton(vIconButton& btn, const std::wstring& text, const std::wstring& iconPath, int fontSize, bool isFocus, COLORREF fontColor, COLORREF bgColor, COLORREF bgFocusColor);
 
 	// 생성된 메시지 맵 함수
