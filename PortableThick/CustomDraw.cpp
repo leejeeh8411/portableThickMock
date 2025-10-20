@@ -14,8 +14,7 @@ CustomDraw::CustomDraw()
 	, m_scaleY(1.0)
 	, m_showGuides(true)
 	, m_guideDivisions(10)
-	, m_showMeasurementPoints(true)
-	, m_circleRadius(14)
+	, m_circleRadiusMeasurePoint(14)
 	, m_backgroundColor(RGB(255, 255, 255))  // 기본 배경색: 흰색
 	, m_selectedMeasurementPointIndex(-1)
 {
@@ -116,15 +115,15 @@ void CustomDraw::DeselectAllMeasurementPoints()
 	Invalidate();
 }
 
-bool CustomDraw::IsPointInMeasurementPoint(const CPoint& point, const MeasurementPoint& mp) const
+bool CustomDraw::isPointInMeasurementPoint(const CPoint& point, const MeasurementPoint& mp) const
 {
-	// mm 좌표를 픽셀 좌표로 변환
-	CPoint pixelPos = MMToPixel(mp.positionMM.x, mp.positionMM.y);
+    // mm 좌표를 픽셀 좌표로 변환
+    CPoint pixelPos = MMToPixel(mp.positionMM.x, mp.positionMM.y);
 	
 	// 원형 영역 내부인지 확인
 	int dx = point.x - pixelPos.x;
 	int dy = point.y - pixelPos.y;
-	int radius = m_circleRadius + 5; // 클릭 영역을 약간 크게
+	int radius = m_circleRadiusMeasurePoint + 5; // 클릭 영역을 약간 크게
 	
 	return (dx * dx + dy * dy) <= (radius * radius);
 }
@@ -132,57 +131,70 @@ bool CustomDraw::IsPointInMeasurementPoint(const CPoint& point, const Measuremen
 void CustomDraw::AddMeasurementPoint(int id, double xMM, double yMM, double targetValue, 
 									double measuredValue, const std::string& status)
 {
-	CPoint positionMM(static_cast<int>(xMM), static_cast<int>(yMM));
-	m_measurementPoints.emplace_back(id, positionMM, targetValue, measuredValue, status);
+    CPoint positionMM(static_cast<int>(xMM), static_cast<int>(yMM));
+    {
+        std::lock_guard<std::mutex> lock(m_measurementMutex);
+        m_measurementPoints.emplace_back(id, positionMM, targetValue, measuredValue, status);
+    }
+    Invalidate();
+}
+
+void CustomDraw::ClearAllMeasurementPoints()
+{
+    {
+        std::lock_guard<std::mutex> lock(m_measurementMutex);
+        m_measurementPoints.clear();
+        m_selectedMeasurementPointIndex = -1;  // 선택 해제
+    }
 	Invalidate();
 }
 
-void CustomDraw::ClearMeasurementPoints()
+bool CustomDraw::SetMeasurementPointValue(int id, double measuredValue, const std::string& status)
 {
-	m_measurementPoints.clear();
-	m_selectedMeasurementPointIndex = -1;  // 선택 해제
-	Invalidate();
+    bool found = false;
+    {
+        std::lock_guard<std::mutex> lock(m_measurementMutex);
+        for (auto& point : m_measurementPoints)
+        {
+            if (point.id == id)
+            {
+                point.measuredValue = measuredValue;
+                point.statusText = status;
+                point.hasMeasuredValue = (measuredValue >= 0);
+
+                // 색상 재계산
+                if (point.hasMeasuredValue)
+                {
+                    if (status == "OK")
+                    {
+                        point.circleColor = RGB(0, 255, 0);
+                        point.textColor = RGB(0, 150, 0);
+                    }
+                    else if (status == "NG")
+                    {
+                        point.circleColor = RGB(255, 0, 0);
+                        point.textColor = RGB(200, 0, 0);
+                    }
+                    else
+                    {
+                        point.circleColor = RGB(128, 128, 128);
+                        point.textColor = RGB(100, 100, 100);
+                    }
+                }
+                else
+                {
+                    point.circleColor = RGB(128, 128, 128);
+                    point.textColor = RGB(100, 100, 100);
+                }
+                found = true;
+                break;
+            }
+        }
+    }
+    if (found) Invalidate();
+    return found;
 }
 
-void CustomDraw::SetMeasurementPointValue(int id, double measuredValue, const std::string& status)
-{
-	for (auto& point : m_measurementPoints)
-	{
-		if (point.id == id)
-		{
-			point.measuredValue = measuredValue;
-			point.statusText = status;
-			point.hasMeasuredValue = (measuredValue >= 0);
-			
-			// 색상 재계산
-			if (point.hasMeasuredValue)
-			{
-				if (status == "OK")
-				{
-					point.circleColor = RGB(0, 255, 0);
-					point.textColor = RGB(0, 150, 0);
-				}
-				else if (status == "NG")
-				{
-					point.circleColor = RGB(255, 0, 0);
-					point.textColor = RGB(200, 0, 0);
-				}
-				else
-				{
-					point.circleColor = RGB(128, 128, 128);
-					point.textColor = RGB(100, 100, 100);
-				}
-			}
-			else
-			{
-				point.circleColor = RGB(128, 128, 128);
-				point.textColor = RGB(100, 100, 100);
-			}
-			break;
-		}
-	}
-	Invalidate();
-}
 
 CPoint CustomDraw::MMToPixel(double xMM, double yMM) const
 {
@@ -208,7 +220,7 @@ double CustomDraw::PixelToMM_Y(int pixelY) const
 	return static_cast<double>(pixelY) / m_scaleY;
 }
 
-void CustomDraw::DrawGuides(CDC* pDC)
+void CustomDraw::drawGuides(CDC* pDC)
 {
 	if (!m_showGuides || m_widthMM <= 0 || m_heightMM <= 0)
 		return;
@@ -236,7 +248,7 @@ void CustomDraw::DrawGuides(CDC* pDC)
 	pDC->SelectObject(oldPen);
 }
 
-void CustomDraw::DrawGuideLabels(CDC* pDC)
+void CustomDraw::drawGuideLabels(CDC* pDC)
 {
 	if (!m_showGuides || m_widthMM <= 0 || m_heightMM <= 0)
 		return;
@@ -280,7 +292,7 @@ void CustomDraw::DrawGuideLabels(CDC* pDC)
 	pDC->SelectObject(oldFont);
 }
 
-void CustomDraw::DrawObjects(CDC* pDC)
+void CustomDraw::drawObjects(CDC* pDC)
 {
 	for (const auto& obj : m_objects)
 	{
@@ -327,10 +339,8 @@ void CustomDraw::DrawObjects(CDC* pDC)
 	}
 }
 
-void CustomDraw::DrawMeasurementPoints(CDC* pDC)
+void CustomDraw::drawMeasurementPoints(CDC* pDC)
 {
-	if (!m_showMeasurementPoints)
-		return;
 	
 	// 폰트 설정
 	CFont font;
@@ -339,7 +349,14 @@ void CustomDraw::DrawMeasurementPoints(CDC* pDC)
 					DEFAULT_PITCH | FF_SWISS, L"Arial");
 	CFont* oldFont = pDC->SelectObject(&font);
 	
-	for (const auto& point : m_measurementPoints)
+    // 안전한 스냅샷을 만들어 잠금 시간을 최소화
+    std::vector<MeasurementPoint> snapshot;
+    {
+        std::lock_guard<std::mutex> lock(m_measurementMutex);
+        snapshot = m_measurementPoints;
+    }
+
+    for (const auto& point : snapshot)
 	{
 		// mm 좌표를 픽셀 좌표로 변환
 		CPoint pixelPos = MMToPixel(point.positionMM.x, point.positionMM.y);
@@ -348,8 +365,8 @@ void CustomDraw::DrawMeasurementPoints(CDC* pDC)
 		COLORREF drawColor = point.isSelected ? RGB(0, 0, 255) : point.circleColor;
 		
         // 외곽 원(링)과 내부 동심원 계산
-        CRect circleRect(pixelPos.x - m_circleRadius, pixelPos.y - m_circleRadius,
-                        pixelPos.x + m_circleRadius, pixelPos.y + m_circleRadius);
+        CRect circleRect(pixelPos.x - m_circleRadiusMeasurePoint, pixelPos.y - m_circleRadiusMeasurePoint,
+                        pixelPos.x + m_circleRadiusMeasurePoint, pixelPos.y + m_circleRadiusMeasurePoint);
 
         // 외곽 원: 두께감 있는 빈 원(링)
         int ringThickness = 2; // 펜 두께
@@ -362,7 +379,7 @@ void CustomDraw::DrawMeasurementPoints(CDC* pDC)
         pDC->SelectObject(oldPen);
 
         // 내부 동심원: solid 채움
-        int innerRadius = max(2, m_circleRadius / 2.5);
+        int innerRadius = max(2, m_circleRadiusMeasurePoint / 2.5);
         CRect innerRect(pixelPos.x - innerRadius, pixelPos.y - innerRadius,
                         pixelPos.x + innerRadius, pixelPos.y + innerRadius);
         CBrush innerBrush(drawColor);
@@ -391,7 +408,7 @@ void CustomDraw::DrawMeasurementPoints(CDC* pDC)
         CSize prefixSize = pDC->GetTextExtent(prefix);
         CSize statusSize = statusStr.IsEmpty() ? CSize(0, 0) : pDC->GetTextExtent(statusStr);
         int totalWidth = prefixSize.cx + statusSize.cx;
-        int textY = pixelPos.y + m_circleRadius + 5;
+        int textY = pixelPos.y + m_circleRadiusMeasurePoint + 5;
         int startX = pixelPos.x - totalWidth / 2;
 
         // 본문(검정)
@@ -418,15 +435,21 @@ void CustomDraw::DrawMeasurementPoints(CDC* pDC)
 void CustomDraw::OnLButtonDown(UINT nFlags, CPoint point)
 {
 	// 마우스 클릭 위치에서 측정 지점 찾기 (뒤에서부터 검사하여 위에 있는 지점 우선)
-	int foundIndex = -1;
-	for (int i = static_cast<int>(m_measurementPoints.size()) - 1; i >= 0; --i)
-	{
-		if (IsPointInMeasurementPoint(point, m_measurementPoints[i]))
-		{
-			foundIndex = i;
-			break;
-		}
-	}
+    int foundIndex = -1;
+    // 잠금 범위를 최소화하기 위해 스냅샷
+    std::vector<MeasurementPoint> snapshot;
+    {
+        std::lock_guard<std::mutex> lock(m_measurementMutex);
+        snapshot = m_measurementPoints;
+    }
+    for (int i = static_cast<int>(snapshot.size()) - 1; i >= 0; --i)
+    {
+        if (isPointInMeasurementPoint(point, snapshot[i]))
+        {
+            foundIndex = i;
+            break;
+        }
+    }
 	
 	// 측정 지점 선택
 	SelectMeasurementPoint(foundIndex);
@@ -473,14 +496,14 @@ void CustomDraw::OnPaint()
 	dc.Draw3dRect(&rect, RGB(128, 128, 128), RGB(192, 192, 192));
 	
 	// 가이드라인 그리기
-	DrawGuides(&dc);
+	drawGuides(&dc);
 	
 	// 가이드라인 라벨 그리기
-	DrawGuideLabels(&dc);
+	drawGuideLabels(&dc);
 	
 	// 오브젝트들 그리기
-	DrawObjects(&dc);
+	drawObjects(&dc);
 	
 	// 측정 지점들 그리기
-	DrawMeasurementPoints(&dc);
+	drawMeasurementPoints(&dc);
 }

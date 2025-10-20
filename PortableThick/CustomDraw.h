@@ -102,17 +102,17 @@ public:
 	// 측정 지점 관리 함수
 	void AddMeasurementPoint(int id, double xMM, double yMM, double targetValue, 
 							double measuredValue = -1.0, const std::string& status = "");
-	void ClearMeasurementPoints();
-	void SetMeasurementPointValue(int id, double measuredValue, const std::string& status);
+	void ClearAllMeasurementPoints();
+	bool SetMeasurementPointValue(int id, double measuredValue, const std::string& status);
+
 	
 	// 표시 옵션
-	void SetShowMeasurementPoints(bool show) { m_showMeasurementPoints = show; Invalidate(); }
-	void SetCircleRadius(int radius) { m_circleRadius = radius; Invalidate(); }
+	void SetCircleRadius(int radius) { m_circleRadiusMeasurePoint = radius; Invalidate(); }
 	void SetBackgroundColor(COLORREF color) { m_backgroundColor = color; Invalidate(); }
 	COLORREF GetBackgroundColor() const { return m_backgroundColor; }
+
 	void SetShowGuides(bool show) { m_showGuides = show; Invalidate(); }
 	bool GetShowGuides() const { return m_showGuides; }
-	void ToggleGuides() { m_showGuides = !m_showGuides; Invalidate(); }
 	
 	// 선택 관련 함수
 	void SelectMeasurementPoint(int index);
@@ -138,14 +138,14 @@ private:
 	
 	// 측정 지점 저장소
 	std::vector<MeasurementPoint> m_measurementPoints;
+	mutable std::mutex m_measurementMutex;
 	
 	// 가이드라인 설정
 	bool m_showGuides;
 	int m_guideDivisions;      // 등분 수
 	
 	// 측정 지점 설정
-	bool m_showMeasurementPoints;
-	int m_circleRadius;        // 원형 마커의 반지름 (픽셀)
+	int m_circleRadiusMeasurePoint;        // 원형 마커의 반지름 (픽셀)
 	
 	// 배경 설정
 	COLORREF m_backgroundColor; // 배경색
@@ -154,11 +154,12 @@ private:
 	int m_selectedMeasurementPointIndex; // 선택된 측정 지점의 인덱스 (-1이면 선택 없음)
 	
 	// 내부 함수
-	void DrawGuides(CDC* pDC);
-	void DrawObjects(CDC* pDC);
-	void DrawGuideLabels(CDC* pDC);
-	void DrawMeasurementPoints(CDC* pDC);
-	bool IsPointInMeasurementPoint(const CPoint& point, const MeasurementPoint& mp) const;
+	void drawGuides(CDC* pDC);
+	void drawGuideLabels(CDC* pDC);
+	void drawObjects(CDC* pDC);
+	void drawMeasurementPoints(CDC* pDC);
+	// 버튼클릭 지점이 측정 포인트인지 확인
+	bool isPointInMeasurementPoint(const CPoint& point, const MeasurementPoint& mp) const;
 
 protected:
 	DECLARE_MESSAGE_MAP()

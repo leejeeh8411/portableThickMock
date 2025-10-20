@@ -301,8 +301,11 @@ void CPortableThickDlg::InitGrid()
 
 void CPortableThickDlg::InitCustomDraw()
 {
-	// CustomDraw 초기화 - 100mm x 100mm 영역 설정
-	_customDraw.InitializeDimensions(100.0, 100.0);
+	// CustomDraw 초기화
+	double width = 400.0;
+	double height = 400.0;
+	// 100mm x 100mm 영역
+	_customDraw.InitializeDimensions(width, height);
 	
 	// 배경색 설정 (연한 회색)
 	_customDraw.SetBackgroundColor(RGB(10, 10, 10));
@@ -315,16 +318,20 @@ void CPortableThickDlg::InitCustomDraw()
 	//_customDraw.AddRectangle(10.0, 10.0, 20.0, 15.0, RGB(255, 0, 0), 2, true);
 	
 	// 원 추가 (50mm, 50mm 중심에 반지름 10mm)
-	_customDraw.AddCircle(50.0, 50.0, 25.0, RGB(180, 180, 180), 2, true);
+	double centerPosX = 200.0;
+	double centerPosY = 200.0;
+	double radius = 100.0;
+	_customDraw.AddCircle(centerPosX, centerPosY, radius, RGB(180, 180, 180), 2, true);
 	
 	// 선 추가 (0mm, 0mm에서 100mm, 100mm까지)
 	//_customDraw.AddLine(0.0, 0.0, 100.0, 100.0, RGB(0, 0, 255), 1);
 	
 	// 측정 지점들 추가 (그림에 맞게 배치)
-	_customDraw.AddMeasurementPoint(1, 35.0, 50.0, 45.0, 50.0, "NG");  // 왼쪽 중간
-	_customDraw.AddMeasurementPoint(2, 50.0, 25.0, 45.0, 48.0, "OK"); // 아래쪽 중간
-	_customDraw.AddMeasurementPoint(3, 50.0, 75.0, 45.0);              // 위쪽 중간 (측정값 없음)
-	_customDraw.AddMeasurementPoint(4, 65.0, 50.0, 45.0);              // 오른쪽 중간 (측정값 없음)
+	double target = 45.0;
+	_customDraw.AddMeasurementPoint(1, 135.0, 150.0, target, 50.0, "NG"); 
+	_customDraw.AddMeasurementPoint(2, 250.0, 125.0, target, 48.0, "OK"); 
+	_customDraw.AddMeasurementPoint(3, 250.0, 275.0, target);             
+	_customDraw.AddMeasurementPoint(4, 165.0, 250.0, target);             
 }
 
 
