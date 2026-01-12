@@ -7,6 +7,7 @@
 #include "PortableThick.h"
 #include "PortableThickDlg.h"
 #include "afxdialogex.h"
+#include "DlgSetting.h"
 #include <random>
 #include <chrono>
 #include <algorithm>
@@ -133,6 +134,7 @@ BEGIN_MESSAGE_MAP(CPortableThickDlg, CDialogEx)
 	ON_WM_PAINT()
 	ON_WM_QUERYDRAGICON()
 	ON_WM_CTLCOLOR()
+	ON_BN_CLICKED(IDC_BTN_SETTING, &CPortableThickDlg::OnBnClickedBtnSetting)
 END_MESSAGE_MAP()
 
 
@@ -394,4 +396,10 @@ HBRUSH CPortableThickDlg::OnCtlColor(CDC* pDC, CWnd* pWnd, UINT nCtlColor)
 	}
 
 	return CDialogEx::OnCtlColor(pDC, pWnd, nCtlColor);
+}
+
+void CPortableThickDlg::OnBnClickedBtnSetting()
+{
+	DlgSetting dlg;
+	dlg.DoModal();
 }
