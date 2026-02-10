@@ -52,7 +52,8 @@ void DlgSetting::ShowOnScreenKeyboard(UINT nTargetEditID)
 	if (m_pVirtualKbd != nullptr && !::IsWindow(m_pVirtualKbd->GetSafeHwnd()))
 		m_pVirtualKbd = nullptr;
 
-	HWND hTarget = GetDlgItem(nTargetEditID) ? GetDlgItem(nTargetEditID)->GetSafeHwnd() : NULL;
+	CWnd* pEdit = GetDlgItem(nTargetEditID);
+	HWND hTarget = pEdit ? pEdit->GetSafeHwnd() : NULL;
 
 	if (m_pVirtualKbd == nullptr)
 	{
@@ -60,6 +61,24 @@ void DlgSetting::ShowOnScreenKeyboard(UINT nTargetEditID)
 		if (m_pVirtualKbd->Create(IDD_VIRTUAL_KEYBOARD, this))
 		{
 			m_pVirtualKbd->SetTarget(hTarget);
+			// 먼저 위치 설정 후 표시 (첫 표시 시에도 한 번에 올바른 위치에 뜨도록)
+			if (pEdit)
+			{
+				const int offsetX = 8, offsetY = 8;
+				CRect rcEdit;
+				pEdit->GetWindowRect(&rcEdit);
+				int x = rcEdit.right + offsetX;
+				int y = rcEdit.bottom + offsetY;
+				CRect rcKbd;
+				m_pVirtualKbd->GetWindowRect(&rcKbd);
+				int screenRight = GetSystemMetrics(SM_CXSCREEN);
+				int screenBottom = GetSystemMetrics(SM_CYSCREEN);
+				if (x + rcKbd.Width() > screenRight) x = screenRight - rcKbd.Width();
+				if (y + rcKbd.Height() > screenBottom) y = screenBottom - rcKbd.Height();
+				if (x < 0) x = 0;
+				if (y < 0) y = 0;
+				m_pVirtualKbd->SetWindowPos(NULL, x, y, 0, 0, SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE);
+			}
 			m_pVirtualKbd->ShowWindow(SW_SHOW);
 		}
 		else
@@ -71,6 +90,24 @@ void DlgSetting::ShowOnScreenKeyboard(UINT nTargetEditID)
 	else
 	{
 		m_pVirtualKbd->SetTarget(hTarget);
+		if (pEdit)
+		{
+			// 선택한 에디트 컨트롤 위치 기준으로 가상키보드 창을 이동시킨다.
+			const int offsetX = 8, offsetY = 8;
+			CRect rcEdit;
+			pEdit->GetWindowRect(&rcEdit);
+			int x = rcEdit.right + offsetX;
+			int y = rcEdit.bottom + offsetY;
+			CRect rcKbd;
+			m_pVirtualKbd->GetWindowRect(&rcKbd);
+			int screenRight = GetSystemMetrics(SM_CXSCREEN);
+			int screenBottom = GetSystemMetrics(SM_CYSCREEN);
+			if (x + rcKbd.Width() > screenRight) x = screenRight - rcKbd.Width();
+			if (y + rcKbd.Height() > screenBottom) y = screenBottom - rcKbd.Height();
+			if (x < 0) x = 0;
+			if (y < 0) y = 0;
+			m_pVirtualKbd->SetWindowPos(NULL, x, y, 0, 0, SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE);
+		}
 		m_pVirtualKbd->ShowWindow(SW_SHOW);
 	}
 }

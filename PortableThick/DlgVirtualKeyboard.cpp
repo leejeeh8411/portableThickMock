@@ -181,7 +181,7 @@ void DlgVirtualKeyboard::CreateKeyButtons()
 }
 
 
-// 넘패드 레이아웃: 7,8,9 / 4,5,6 / 1,2,3 / 0,.,Back (동일 크기·배열), ABC
+// 넘패드 레이아웃: 전체 가운데, 7,8,9 / 4,5,6 / 1,2,3 / 0,.,Back / ABC(하단, 열 맞춤, 같은 높이)
 void DlgVirtualKeyboard::CreateNumpadButtons()
 {
 	const int KEY_W = 80;
@@ -193,18 +193,18 @@ void DlgVirtualKeyboard::CreateNumpadButtons()
 	GetClientRect(&rcClient);
 	const int CW = rcClient.Width();
 
-	// 순서: 7 8 9 / 4 5 6 / 1 2 3 / 0 . Back / ABC
 	static const TCHAR* s_labels[NUMPAD_KEY_COUNT] = {
 		_T("7"), _T("8"), _T("9"), _T("4"), _T("5"), _T("6"),
 		_T("1"), _T("2"), _T("3"), _T("0"), _T("."), _T("Back"), _T("ABC")
 	};
 
+	// 3열 그리드 가운데 배치
 	const int block_w = 3 * KEY_W + 2 * GAP;
 	int left = (CW - block_w) / 2;
 	int y = MARGIN;
 
-	// Row 0~3: 4행 모두 3열 동일 크기 (7,8,9 / 4,5,6 / 1,2,3 / 0,.,Back)
-	for (int row = 0; row < 4; row++)
+	// Row 0~2: 7,8,9 / 4,5,6 / 1,2,3
+	for (int row = 0; row < 3; row++)
 	{
 		for (int col = 0; col < 3; col++)
 		{
@@ -218,13 +218,22 @@ void DlgVirtualKeyboard::CreateNumpadButtons()
 		y += KEY_H + GAP;
 	}
 
-	// Row 4: ABC (문자 모드로 전환)
-	int abc_w = KEY_W * 2;
-	int abc_left = (CW - abc_w) / 2;
+	// Row 3: ABC(0번 키 좌측), 0, ., Back
+	int abc_x = left - KEY_W - GAP;
+	if (abc_x < MARGIN) abc_x = MARGIN;
 	CButton* pABC = new CButton();
 	pABC->Create(s_labels[12], WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON,
-		CRect(abc_left, y, abc_left + abc_w, y + KEY_H), this, IDC_KEY_FIRST + 12);
+		CRect(abc_x, y, abc_x + KEY_W, y + KEY_H), this, IDC_KEY_FIRST + 12);
 	m_keyButtons.push_back(pABC);
+	for (int col = 0; col < 3; col++)
+	{
+		int idx = 9 + col;  // 0, ., Back
+		int x = left + col * (KEY_W + GAP);
+		CButton* pBtn = new CButton();
+		pBtn->Create(s_labels[idx], WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON,
+			CRect(x, y, x + KEY_W, y + KEY_H), this, IDC_KEY_FIRST + idx);
+		m_keyButtons.push_back(pBtn);
+	}
 }
 
 
