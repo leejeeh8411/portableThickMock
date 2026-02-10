@@ -5,7 +5,8 @@
 #include "PortableThick.h"
 #include "afxdialogex.h"
 #include "DlgSetting.h"
-#include <shellapi.h>
+#include "DlgVirtualKeyboard.h"
+#include "resource.h"
 #include <windows.h>
 
 
@@ -15,8 +16,8 @@ IMPLEMENT_DYNAMIC(DlgSetting, CDialogEx)
 
 DlgSetting::DlgSetting(CWnd* pParent /*=nullptr*/)
 	: CDialogEx(IDD_DIALOG1, pParent)
+	, m_pVirtualKbd(nullptr)
 {
-
 }
 
 DlgSetting::~DlgSetting()
@@ -46,55 +47,78 @@ END_MESSAGE_MAP()
 
 // DlgSetting 메시지 처리기
 
-void DlgSetting::ShowOnScreenKeyboard()
+void DlgSetting::ShowOnScreenKeyboard(UINT nTargetEditID)
 {
-	// osk.exe (On-Screen Keyboard) 실행
-	ShellExecute(NULL, _T("open"), _T("osk.exe"), NULL, NULL, SW_SHOWNORMAL);
+	if (m_pVirtualKbd != nullptr && !::IsWindow(m_pVirtualKbd->GetSafeHwnd()))
+		m_pVirtualKbd = nullptr;
+
+	HWND hTarget = GetDlgItem(nTargetEditID) ? GetDlgItem(nTargetEditID)->GetSafeHwnd() : NULL;
+
+	if (m_pVirtualKbd == nullptr)
+	{
+		m_pVirtualKbd = new DlgVirtualKeyboard(this);
+		if (m_pVirtualKbd->Create(IDD_VIRTUAL_KEYBOARD, this))
+		{
+			m_pVirtualKbd->SetTarget(hTarget);
+			m_pVirtualKbd->ShowWindow(SW_SHOW);
+		}
+		else
+		{
+			delete m_pVirtualKbd;
+			m_pVirtualKbd = nullptr;
+		}
+	}
+	else
+	{
+		m_pVirtualKbd->SetTarget(hTarget);
+		m_pVirtualKbd->ShowWindow(SW_SHOW);
+	}
 }
+
 
 void DlgSetting::OnEnSetFocusEdit1()
 {
-	ShowOnScreenKeyboard();
+	ShowOnScreenKeyboard(IDC_EDIT1);
 }
 
 void DlgSetting::OnEnSetFocusEdit2()
 {
-	ShowOnScreenKeyboard();
+	ShowOnScreenKeyboard(IDC_EDIT2);
 }
 
 void DlgSetting::OnEnSetFocusEdit3()
 {
-	ShowOnScreenKeyboard();
+	ShowOnScreenKeyboard(IDC_EDIT3);
 }
 
 void DlgSetting::OnEnSetFocusEdit4()
 {
-	ShowOnScreenKeyboard();
+	ShowOnScreenKeyboard(IDC_EDIT4);
 }
 
 void DlgSetting::OnEnSetFocusEdit5()
 {
-	ShowOnScreenKeyboard();
+	ShowOnScreenKeyboard(IDC_EDIT5);
 }
 
 void DlgSetting::OnEnSetFocusEdit6()
 {
-	ShowOnScreenKeyboard();
+	ShowOnScreenKeyboard(IDC_EDIT6);
 }
 
 void DlgSetting::OnEnSetFocusEdit7()
 {
-	ShowOnScreenKeyboard();
+	ShowOnScreenKeyboard(IDC_EDIT7);
 }
 
 void DlgSetting::OnEnSetFocusEdit8()
 {
-	ShowOnScreenKeyboard();
+	ShowOnScreenKeyboard(IDC_EDIT8);
 }
 
 void DlgSetting::OnEnSetFocusEdit9()
 {
-	ShowOnScreenKeyboard();
+	ShowOnScreenKeyboard(IDC_EDIT9);
 }
 
 void DlgSetting::OnBnClickedBtnResetVirKeyboard()
@@ -104,27 +128,5 @@ void DlgSetting::OnBnClickedBtnResetVirKeyboard()
 
 void DlgSetting::OnBnClickedBtnSaveAndExit()
 {
-	// OSK (화상 키보드) 종료
-	HWND hwndOSK = ::FindWindow(_T("OSKMainClass"), NULL);
-	if (hwndOSK != NULL && ::IsWindow(hwndOSK))
-	{
-		// 창 핸들에서 프로세스 ID 얻기
-		DWORD dwProcessId = 0;
-		::GetWindowThreadProcessId(hwndOSK, &dwProcessId);
-		
-		if (dwProcessId != 0)
-		{
-			// 프로세스 핸들 열기
-			HANDLE hProcess = ::OpenProcess(PROCESS_TERMINATE, FALSE, dwProcessId);
-			if (hProcess != NULL)
-			{
-				// 프로세스 종료
-				::TerminateProcess(hProcess, 0);
-				::CloseHandle(hProcess);
-			}
-		}
-	}
-	
-	// 다이얼로그 닫기
-	EndDialog(IDOK);
+
 }

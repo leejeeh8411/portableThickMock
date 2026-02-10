@@ -1,6 +1,7 @@
 ﻿#pragma once
 #include "afxdialogex.h"
 
+class DlgVirtualKeyboard;
 
 // DlgSetting 대화 상자
 
@@ -9,20 +10,22 @@ class DlgSetting : public CDialogEx
 	DECLARE_DYNAMIC(DlgSetting)
 
 public:
-	DlgSetting(CWnd* pParent = nullptr);   // 표준 생성자입니다.
+	DlgSetting(CWnd* pParent = nullptr);
 	virtual ~DlgSetting();
 
-// 대화 상자 데이터입니다.
 #ifdef AFX_DESIGN_TIME
 	enum { IDD = IDD_DIALOG1 };
 #endif
 
 protected:
-	virtual void DoDataExchange(CDataExchange* pDX);    // DDX/DDV 지원입니다.
+	virtual void DoDataExchange(CDataExchange* pDX);
 
 	DECLARE_MESSAGE_MAP()
+
 private:
-	void ShowOnScreenKeyboard();
+	void ShowOnScreenKeyboard(UINT nTargetEditID);
+
+	DlgVirtualKeyboard* m_pVirtualKbd;
 	afx_msg void OnEnSetFocusEdit1();
 	afx_msg void OnEnSetFocusEdit2();
 	afx_msg void OnEnSetFocusEdit3();
